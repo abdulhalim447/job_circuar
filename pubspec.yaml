@@ -1,0 +1,60 @@
+name: job_circular
+description: "A new Flutter project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: 
+  http: 
+  webview_flutter: 
+  hive: 
+  hive_flutter: 
+  cached_network_image: 
+  fluttertoast: 
+  url_launcher: 
+  html: ^0.15.6
+  provider: ^6.1.5+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+  flutter_lints: ^5.0.0
+
+  hive_generator: 
+  build_runner: 
+  flutter_launcher_icons: 
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "img/logo.jpg"
+  min_sdk_android: 21
+
+
+flutter:
+
+
+  uses-material-design: true
+
+
+  assets:
+    - img/
