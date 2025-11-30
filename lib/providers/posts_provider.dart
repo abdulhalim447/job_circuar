@@ -104,7 +104,9 @@ class PostsProvider extends ChangeNotifier {
       if (_disposed) return;
       int page = _currentPageByCategory.putIfAbsent(categoryId, () => 1);
 
-      final url = 'https://jobsnoticebd.com/wp-json/wp/v2/posts?categories=$categoryId&page=$page&per_page=10&_embed';
+      // Optimized API call with specific fields
+      final url =
+          'https://jobsnoticebd.com/wp-json/wp/v2/posts?categories=$categoryId&page=$page&per_page=10&_embed&_fields=id,date,title,content,jetpack_featured_media_url,_links,_embedded';
       debugPrint('🌐 API Call: $url');
 
       final res = await http.get(Uri.parse(url));
