@@ -2,18 +2,45 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-class PostsProvider extends ChangeNotifier {
-  // Constants
-  static const int _cacheLimit = 5;
-  static const Duration _cacheTTL = Duration(hours: 1);
+// Isolate function for parsing posts
+List<dynamic> _parsePosts(String responseBody) {
+  final posts = jsonDecode(responseBody);
 
-  // Posts by category (Limited Cache)
+  if (posts is! List<dynamic>) {
+    return [];
+  }
+
+  // Process posts to extract featured image
+  for (var post in posts) {
+    String imageUrl =
+        'https://jobsnoticebd.com/wp-content/uploads/2024/09/Screenshot_20240905-111559_Facebook-1-300x200.jpg';
+
+    // Try to get image from _embedded
+    if (post['_embedded'] != null &&
+        post['_embedded']['wp:featuredmedia'] != null &&
+        post['_embedded']['wp:featuredmedia'].isNotEmpty) {
+      var media = post['_embedded']['wp:featuredmedia'][0];
+      if (media['source_url'] != null) {
+        imageUrl = media['source_url'];
+      }
+    } // Fallback to jetpack_featured_media_url if available
+    else if (post['jetpack_featured_media_url'] != null && post['jetpack_featured_media_url'].toString().isNotEmpty) {
+      imageUrl = post['jetpack_featured_media_url'];
+    }
+
+    // Add image URL to post data
+    post['featured_image_url'] = imageUrl;
+  }
+
+  return posts;
+}
+
+class PostsProvider extends ChangeNotifier {
+  // Posts by category
   LinkedHashMap<int, List<dynamic>> _postsByCategory = LinkedHashMap();
-  Map<int, DateTime?> _cacheTimestamps = {};
   Map<int, bool> _loadingByCategory = {};
   Map<int, int> _currentPageByCategory = {};
   Map<int, bool> _hasMorePostsByCategory = {};
@@ -21,19 +48,21 @@ class PostsProvider extends ChangeNotifier {
   // Search results
   List<dynamic> _searchResults = [];
   bool _searchLoading = false;
+  bool _disposed = false;
 
-  // Hive box
-  Box? _postsBox;
-  Box get postsBox {
-    _postsBox ??= Hive.box('posts_cache');
-    return _postsBox!;
+  PostsProvider();
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
-  PostsProvider() {
-    // Delay initialization to ensure Hive boxes are open
-    Future.microtask(() {
-      _loadCachedPosts();
-    });
+  @override
+  void notifyListeners() {
+    if (!_disposed) {
+      super.notifyListeners();
+    }
   }
 
   // Getters
@@ -52,85 +81,30 @@ class PostsProvider extends ChangeNotifier {
   List<dynamic> get searchResults => _searchResults;
   bool get searchLoading => _searchLoading;
 
-  // Load cached posts from Hive
-  void _loadCachedPosts() {
-    // We are moving away from loading a large cache at startup to prevent memory issues.
-    // This function can be left empty or used for other initialization if needed.
-    print('PostsProvider initialized. Caching is now handled on a per-category basis.');
-  }
-
-  // Save posts to Hive
-  void _savePostsForCategory(int categoryId) {
-    try {
-      if (_postsByCategory.containsKey(categoryId)) {
-        postsBox.put('category_$categoryId', _postsByCategory[categoryId]);
-      }
-    } catch (e) {
-      print('Error saving posts for category $categoryId: $e');
-    }
-  }
-
-  // Cache Management
-  void _limitCacheSize() {
-    if (_postsByCategory.length > _cacheLimit) {
-      int categoryIdToRemove = _postsByCategory.keys.first;
-      _postsByCategory.remove(categoryIdToRemove);
-      _cacheTimestamps.remove(categoryIdToRemove);
-      print('🗑️ Evicted category $categoryIdToRemove from cache.');
-    }
-  }
-
-  bool _isCacheValid(int categoryId) {
-    if (!_cacheTimestamps.containsKey(categoryId)) return false;
-    DateTime? timestamp = _cacheTimestamps[categoryId];
-    if (timestamp == null) return false;
-    return DateTime.now().difference(timestamp) <= _cacheTTL;
-  }
-
   // Fetch posts for a category
-  Future<void> fetchPostsByCategory(int categoryId, {bool forceRefresh = false, bool isFetchingMore = false}) async {
-    print(
-      '🔵 fetchPostsByCategory called for categoryId: $categoryId, forceRefresh: $forceRefresh, isFetchingMore: $isFetchingMore',
-    );
+  Future<void> fetchPostsByCategory(int categoryId, {bool isFetchingMore = false}) async {
+    print('🔵 fetchPostsByCategory called for categoryId: $categoryId, isFetchingMore: $isFetchingMore');
 
     if (_loadingByCategory[categoryId] == true) {
       debugPrint('🟡 Already loading category $categoryId, returning.');
       return;
     }
 
-    // Load from cache first if it's the initial load for this session
-    if (!isFetchingMore && !forceRefresh && _postsByCategory[categoryId] == null) {
-      final cachedPosts = postsBox.get('category_$categoryId');
-      if (cachedPosts != null && cachedPosts is List) {
-        _postsByCategory[categoryId] = List<dynamic>.from(cachedPosts);
-        _cacheTimestamps[categoryId] = DateTime.now();
-        _currentPageByCategory[categoryId] = (_postsByCategory[categoryId]!.length / 10).ceil() + 1;
-        debugPrint('✅ Posts loaded from cache for category $categoryId, count: ${cachedPosts.length}');
-        notifyListeners();
-        return;
-      }
-    }
-
-    if (!_isCacheValid(categoryId) || forceRefresh) {
-      debugPrint('Expired cache or forceRefresh, clearing posts for category $categoryId');
+    if (!isFetchingMore) {
+      debugPrint('Clearing posts for category $categoryId to fetch fresh data');
       _postsByCategory.remove(categoryId);
-      _cacheTimestamps.remove(categoryId);
       _currentPageByCategory[categoryId] = 1;
       _hasMorePostsByCategory[categoryId] = true;
-    } else if (!isFetchingMore &&
-        _postsByCategory.containsKey(categoryId) &&
-        _postsByCategory[categoryId]!.isNotEmpty) {
-      debugPrint('✅ Posts already handled for category $categoryId, count: ${_postsByCategory[categoryId]!.length}');
-      return;
     }
 
     _loadingByCategory[categoryId] = true;
     notifyListeners();
 
     try {
+      if (_disposed) return;
       int page = _currentPageByCategory.putIfAbsent(categoryId, () => 1);
 
-      final url = 'https://jobsnoticebd.com/wp-json/wp/v2/posts?categories=$categoryId&page=$page&_embed';
+      final url = 'https://jobsnoticebd.com/wp-json/wp/v2/posts?categories=$categoryId&page=$page&per_page=10&_embed';
       debugPrint('🌐 API Call: $url');
 
       final res = await http.get(Uri.parse(url));
@@ -144,45 +118,26 @@ class PostsProvider extends ChangeNotifier {
         return;
       }
 
-      final posts = jsonDecode(res.body);
+      // Use compute to parse JSON in a separate isolate
+      final posts = await compute(_parsePosts, res.body);
 
-      debugPrint('📊 Posts received: ${posts is List ? posts.length : 'Not a list'}');
+      if (_disposed) return;
 
-      if (posts is! List<dynamic> || posts.isEmpty) {
+      debugPrint('📊 Posts received: ${posts.length}');
+
+      if (posts.isEmpty) {
         debugPrint('⚠️ No more posts found for page $page');
         _hasMorePostsByCategory[categoryId] = false;
         return;
       }
 
-      // Process posts to extract featured image
-      for (var post in posts) {
-        String imageUrl =
-            'https://jobsnoticebd.com/wp-content/uploads/2024/09/Screenshot_20240905-111559_Facebook-1-300x200.jpg';
-
-        // Try to get image from _embedded
-        if (post['_embedded'] != null &&
-            post['_embedded']['wp:featuredmedia'] != null &&
-            post['_embedded']['wp:featuredmedia'].isNotEmpty) {
-          var media = post['_embedded']['wp:featuredmedia'][0];
-          if (media['source_url'] != null) {
-            imageUrl = media['source_url'];
-          }
-        } // Fallback to jetpack_featured_media_url if available
-        else if (post['jetpack_featured_media_url'] != null &&
-            post['jetpack_featured_media_url'].toString().isNotEmpty) {
-          imageUrl = post['jetpack_featured_media_url'];
-        }
-
-        // Add image URL to post data
-        post['featured_image_url'] = imageUrl;
+      if (isFetchingMore) {
+        _postsByCategory[categoryId]!.addAll(posts);
+      } else {
+        _postsByCategory[categoryId] = List<dynamic>.from(posts);
       }
 
-      _postsByCategory[categoryId] = List<dynamic>.from(posts);
-      _cacheTimestamps[categoryId] = DateTime.now();
       _currentPageByCategory[categoryId] = page + 1;
-
-      _savePostsForCategory(categoryId);
-      _limitCacheSize();
     } catch (e) {
       print('❌ Error fetching posts: $e');
       _hasMorePostsByCategory[categoryId] = false;
@@ -190,6 +145,12 @@ class PostsProvider extends ChangeNotifier {
       _loadingByCategory[categoryId] = false;
       notifyListeners();
       print('🏁 Finished loading category $categoryId. Loading: false');
+
+      // Automatically fetch the next batch if this was the initial load
+      if (!isFetchingMore && _hasMorePostsByCategory[categoryId] == true) {
+        debugPrint('🚀 Auto-fetching next batch for category $categoryId');
+        fetchMorePosts(categoryId);
+      }
     }
   }
 
@@ -268,6 +229,6 @@ class PostsProvider extends ChangeNotifier {
 
   // Refresh posts for a category
   Future<void> refreshCategory(int categoryId) async {
-    await fetchPostsByCategory(categoryId, forceRefresh: true);
+    await fetchPostsByCategory(categoryId);
   }
 }

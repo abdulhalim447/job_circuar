@@ -27,9 +27,6 @@ void main() async {
   favourites = await Hive.openBox<FavouritePost>('favourites');
   settings = await Hive.openBox<Appsettings>('settings');
 
-  // Open untyped box for posts cache (used by PostsProvider)
-  await Hive.openBox('posts_cache');
-
   runApp(
     MultiProvider(
       providers: [
