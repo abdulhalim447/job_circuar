@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,8 +7,13 @@ import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 
 class PostsProvider extends ChangeNotifier {
-  // Posts by category
-  Map<int, List<dynamic>> _postsByCategory = {};
+  // Constants
+  static const int _cacheLimit = 5;
+  static const Duration _cacheTTL = Duration(hours: 1);
+
+  // Posts by category (Limited Cache)
+  LinkedHashMap<int, List<dynamic>> _postsByCategory = LinkedHashMap();
+  Map<int, DateTime?> _cacheTimestamps = {};
   Map<int, bool> _loadingByCategory = {};
   Map<int, int> _currentPageByCategory = {};
   Map<int, bool> _hasMorePostsByCategory = {};
@@ -63,32 +70,57 @@ class PostsProvider extends ChangeNotifier {
     }
   }
 
+  // Cache Management
+  void _limitCacheSize() {
+    if (_postsByCategory.length > _cacheLimit) {
+      int categoryIdToRemove = _postsByCategory.keys.first;
+      _postsByCategory.remove(categoryIdToRemove);
+      _cacheTimestamps.remove(categoryIdToRemove);
+      print('🗑️ Evicted category $categoryIdToRemove from cache.');
+    }
+  }
+
+  bool _isCacheValid(int categoryId) {
+    if (!_cacheTimestamps.containsKey(categoryId)) return false;
+    DateTime? timestamp = _cacheTimestamps[categoryId];
+    if (timestamp == null) return false;
+    return DateTime.now().difference(timestamp) <= _cacheTTL;
+  }
+
   // Fetch posts for a category
   Future<void> fetchPostsByCategory(int categoryId, {bool forceRefresh = false, bool isFetchingMore = false}) async {
-    print('🔵 fetchPostsByCategory called for categoryId: $categoryId');
+    print(
+      '🔵 fetchPostsByCategory called for categoryId: $categoryId, forceRefresh: $forceRefresh, isFetchingMore: $isFetchingMore',
+    );
 
-    if (_loadingByCategory[categoryId] == true) return;
+    if (_loadingByCategory[categoryId] == true) {
+      debugPrint('🟡 Already loading category $categoryId, returning.');
+      return;
+    }
 
     // Load from cache first if it's the initial load for this session
     if (!isFetchingMore && !forceRefresh && _postsByCategory[categoryId] == null) {
       final cachedPosts = postsBox.get('category_$categoryId');
       if (cachedPosts != null && cachedPosts is List) {
         _postsByCategory[categoryId] = List<dynamic>.from(cachedPosts);
+        _cacheTimestamps[categoryId] = DateTime.now();
         _currentPageByCategory[categoryId] = (_postsByCategory[categoryId]!.length / 10).ceil() + 1;
-        print('✅ Posts loaded from cache for category $categoryId, count: ${cachedPosts.length}');
+        debugPrint('✅ Posts loaded from cache for category $categoryId, count: ${cachedPosts.length}');
         notifyListeners();
         return;
       }
     }
 
-    if (forceRefresh) {
-      _postsByCategory[categoryId] = [];
+    if (!_isCacheValid(categoryId) || forceRefresh) {
+      debugPrint('Expired cache or forceRefresh, clearing posts for category $categoryId');
+      _postsByCategory.remove(categoryId);
+      _cacheTimestamps.remove(categoryId);
       _currentPageByCategory[categoryId] = 1;
       _hasMorePostsByCategory[categoryId] = true;
     } else if (!isFetchingMore &&
         _postsByCategory.containsKey(categoryId) &&
         _postsByCategory[categoryId]!.isNotEmpty) {
-      print('✅ Posts already handled for category $categoryId, count: ${_postsByCategory[categoryId]!.length}');
+      debugPrint('✅ Posts already handled for category $categoryId, count: ${_postsByCategory[categoryId]!.length}');
       return;
     }
 
@@ -99,25 +131,25 @@ class PostsProvider extends ChangeNotifier {
       int page = _currentPageByCategory.putIfAbsent(categoryId, () => 1);
 
       final url = 'https://jobsnoticebd.com/wp-json/wp/v2/posts?categories=$categoryId&page=$page&_embed';
-      print('🌐 API Call: $url');
+      debugPrint('🌐 API Call: $url');
 
       final res = await http.get(Uri.parse(url));
 
-      print('📡 Response Status: ${res.statusCode}');
-      print('📦 Response Body Length: ${res.body.length}');
+      debugPrint('📡 Response Status: ${res.statusCode}');
+      debugPrint('📦 Response Body Length: ${res.body.length}');
 
       if (res.statusCode != 200) {
-        print('❌ API Error: Status ${res.statusCode}');
+        debugPrint('❌ API Error: Status ${res.statusCode}');
         _hasMorePostsByCategory[categoryId] = false;
         return;
       }
 
       final posts = jsonDecode(res.body);
 
-      print('📊 Posts received: ${posts is List ? posts.length : 'Not a list'}');
+      debugPrint('📊 Posts received: ${posts is List ? posts.length : 'Not a list'}');
 
       if (posts is! List<dynamic> || posts.isEmpty) {
-        print('⚠️ No more posts found for page $page');
+        debugPrint('⚠️ No more posts found for page $page');
         _hasMorePostsByCategory[categoryId] = false;
         return;
       }
@@ -145,15 +177,15 @@ class PostsProvider extends ChangeNotifier {
         post['featured_image_url'] = imageUrl;
       }
 
-      if (_postsByCategory[categoryId] == null) {
-        _postsByCategory[categoryId] = [];
-      }
-      _postsByCategory[categoryId]!.addAll(posts);
+      _postsByCategory[categoryId] = List<dynamic>.from(posts);
+      _cacheTimestamps[categoryId] = DateTime.now();
       _currentPageByCategory[categoryId] = page + 1;
 
       _savePostsForCategory(categoryId);
+      _limitCacheSize();
     } catch (e) {
       print('❌ Error fetching posts: $e');
+      _hasMorePostsByCategory[categoryId] = false;
     } finally {
       _loadingByCategory[categoryId] = false;
       notifyListeners();
@@ -216,12 +248,12 @@ class PostsProvider extends ChangeNotifier {
               notifyListeners();
             }
           } catch (e) {
-            print('Error fetching search result: $e');
+            debugPrint('Error fetching search result: $e');
           }
         }
       }
     } catch (e) {
-      print('Error in search: $e');
+      debugPrint('Error in search: $e');
     } finally {
       _searchLoading = false;
       notifyListeners();
