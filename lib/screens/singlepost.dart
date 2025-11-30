@@ -38,15 +38,55 @@ class _SinglePostPageState extends State<SinglePostPage> {
     category = widget.category;
     date = widget.date;
     style = '''
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-    img{
-    width:100% !important;
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+      display: block;
+      margin: 10px auto;
     }
-    *{
-    font-size:45px !important;
+    body {
+      font-size: 16px !important;
+      line-height: 1.6;
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 10px;
+      color: #333;
+      word-wrap: break-word;
     }
-    td{
-    border:1px solid black;
+    h1, h2, h3, h4, h5, h6 {
+      font-size: 1.3em !important;
+      font-weight: bold;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      color: #000;
+    }
+    p {
+      font-size: 16px !important;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100% !important;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      display: block;
+      overflow-x: auto;
+    }
+    td, th {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    ul, ol {
+      padding-left: 20px;
     }
     .wp-block-buttons a{
     text-decoration:none !important;

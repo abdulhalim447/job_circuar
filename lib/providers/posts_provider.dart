@@ -105,8 +105,10 @@ class PostsProvider extends ChangeNotifier {
       int page = _currentPageByCategory.putIfAbsent(categoryId, () => 1);
 
       // Optimized API call with specific fields
+      // If categoryId is 0, fetch all posts (remove categories parameter)
+      final categoryParam = categoryId == 0 ? '' : 'categories=$categoryId&';
       final url =
-          'https://jobsnoticebd.com/wp-json/wp/v2/posts?categories=$categoryId&page=$page&per_page=10&_embed&_fields=id,date,title,content,jetpack_featured_media_url,_links,_embedded';
+          'https://jobsnoticebd.com/wp-json/wp/v2/posts?${categoryParam}page=$page&per_page=10&_embed&_fields=id,date,title,content,jetpack_featured_media_url,_links,_embedded';
       debugPrint('🌐 API Call: $url');
 
       final res = await http.get(Uri.parse(url));

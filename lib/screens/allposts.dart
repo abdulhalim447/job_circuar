@@ -28,7 +28,7 @@ class _AllPostsState extends State<AllPosts> {
 
     _scrollController.addListener(() {
       // Load more posts when scrolled 50% down
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.5) {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.1) {
         Provider.of<PostsProvider>(context, listen: false).fetchMorePosts(widget.categoryId);
       }
     });
