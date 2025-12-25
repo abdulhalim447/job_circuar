@@ -76,14 +76,18 @@ class _SearchPageState extends State<SearchPage> {
                     : searchResults.isEmpty
                     ? Center(
                         child: Text(
-                          controller.text.isEmpty ? 'Type to search' : 'No results found',
+                          controller.text.isEmpty
+                              ? 'Type to search'
+                              : 'No results found',
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       )
                     : GridView.builder(
                         shrinkWrap: true,
                         itemCount: searchResults.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                        ),
                         itemBuilder: (_, i) {
                           var post = searchResults[i];
                           return GestureDetector(
@@ -91,24 +95,52 @@ class _SearchPageState extends State<SearchPage> {
                               // Navigate to post detail if needed
                             },
                             child: Card(
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: BorderSide(
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.grey[700]!
+                                      : Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
                               child: Center(
                                 child: Column(
                                   children: [
                                     Flexible(
                                       child: CachedNetworkImage(
-                                        imageUrl: (post['image'] != null && post['image'].toString().isNotEmpty)
+                                        imageUrl:
+                                            (post['image'] != null &&
+                                                post['image']
+                                                    .toString()
+                                                    .isNotEmpty)
                                             ? post['image']
                                             : 'https://jobsnoticebd.com/wp-content/uploads/2024/09/Screenshot_20240905-111559_Facebook-1-300x200.jpg',
-                                        placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                                        errorWidget: (context, url, error) => Container(
-                                          color: Colors.grey[300],
-                                          child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey[600]),
+                                        placeholder: (context, url) => Center(
+                                          child: CircularProgressIndicator(),
                                         ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                              color: Colors.grey[300],
+                                              child: Icon(
+                                                Icons.image_not_supported,
+                                                size: 50,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
                                         fit: BoxFit.cover,
                                       ),
                                     ),
                                     SizedBox(height: 5),
-                                    Expanded(child: Text(post['title'], textAlign: TextAlign.center)),
+                                    Expanded(
+                                      child: Text(
+                                        post['title'],
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),

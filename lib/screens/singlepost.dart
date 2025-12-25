@@ -25,16 +25,13 @@ class SinglePostPage extends StatefulWidget {
 }
 
 class _SinglePostPageState extends State<SinglePostPage> {
-  String title = '',
-      image = '',
-      content = '',
-      style = '',
-      fimage = '',
-      date = '';
+  String title = '', image = '', date = '';
   late int category;
   late WebViewController controller;
   bool isfav = false;
   int index = -1;
+  bool _controllerInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,118 +39,10 @@ class _SinglePostPageState extends State<SinglePostPage> {
     image = widget.image;
     category = widget.category;
     date = widget.date;
-    style = '''
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-    img {
-      max-width: 100% !important;
-      width: 100% !important;
-      height: auto !important;
-      display: block;
-      margin: 0 !important;
-      padding: 0 !important;
-      object-fit: contain;
-    }
-    figure, .wp-block-image, .wp-block-media-text {
-      max-width: 100% !important;
-      width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    figure img, .wp-block-image img {
-      max-width: 100% !important;
-      width: 100% !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    p img, div img, span img {
-      max-width: 100% !important;
-      width: 100% !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    body {
-      font-size: 16px !important;
-      line-height: 1.6;
-      font-family: 'Roboto', sans-serif;
-      margin: 0 !important;
-      padding: 0 !important;
-      color: #333;
-      word-wrap: break-word;
-      overflow-x: hidden;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      font-size: 1.3em !important;
-      font-weight: bold;
-      margin-top: 10px;
-      margin-bottom: 5px;
-      padding: 0 10px;
-      color: #000;
-    }
-    p {
-      font-size: 16px !important;
-      margin: 5px 0;
-      padding: 0 10px;
-      max-width: 100%;
-      overflow-x: auto;
-    }
-    table {
-      width: 100% !important;
-      border-collapse: collapse;
-      margin: 10px 0;
-      display: block;
-      overflow-x: auto;
-    }
-    td, th {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-    a {
-      color: #007bff;
-      text-decoration: none;
-    }
-    ul, ol {
-      padding-left: 20px;
-      margin: 5px 0;
-    }
-    .wp-block-buttons a{
-    text-decoration:none !important;
-    color:white !important;
-    padding:15px 25px !important;
-    border-radius:8px !important;
-    border:1px solid rgba(0,240,0,0.4) !important;
-    background:rgba(0,240,0,0.4) !important;
-    }
-    </style>
-    ''';
-    fimage =
-        '''
-    <img style="width:100%;" src="$image">
-    ''';
 
-    content =
-        style +
-        fimage +
-        '<div style="padding: 0 20px;">' +
-        '''
-        <div style="display:flex;justify-content:end;margin-top:20px;">Date: ${date}</div>
-        ''' +
-        widget.content +
-        '</div>';
-    content.replaceAll(r'\n', '');
-    content.replaceAll(r'target=\"_blank\"', '');
-    content.replaceAll(r'rel=\"noreferrer', '');
-    content.replaceAll(r'noopener\', '');
-
+    // Initialize controller once
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadHtmlString(content)
       ..enableZoom(true)
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -202,6 +91,164 @@ class _SinglePostPageState extends State<SinglePostPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load HTML content with current theme
+    if (!_controllerInitialized) {
+      final htmlContent = _generateHtmlContent(context);
+      controller.loadHtmlString(htmlContent);
+      _controllerInitialized = true;
+    }
+  }
+
+  String _generateHtmlContent(BuildContext context) {
+    // Detect if dark mode is enabled from app theme
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Dynamic colors based on theme
+    final backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff';
+    final textColor = isDarkMode ? '#e0e0e0' : '#333333';
+    final headingColor = isDarkMode ? '#ffffff' : '#000000';
+    final tableBorderColor = isDarkMode ? '#444444' : '#dddddd';
+    final tableEvenRowBg = isDarkMode ? '#2a2a2a' : '#f2f2f2';
+    final linkColor = isDarkMode ? '#64b5f6' : '#007bff';
+
+    final style =
+        '''
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    img {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+      display: block;
+      margin: 0 !important;
+      padding: 0 !important;
+      object-fit: contain;
+    }
+    figure, .wp-block-image, .wp-block-media-text {
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    figure img, .wp-block-image img {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    p img, div img, span img {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    body {
+      font-size: 16px !important;
+      line-height: 1.6;
+      font-family: 'Roboto', sans-serif;
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: $backgroundColor !important;
+      color: $textColor !important;
+      word-wrap: break-word;
+      overflow-x: hidden;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-size: 1.3em !important;
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      padding: 0 10px;
+      color: $headingColor !important;
+    }
+    p {
+      font-size: 16px !important;
+      margin: 5px 0;
+      padding: 0 10px;
+      max-width: 100%;
+      overflow-x: auto;
+      color: $textColor !important;
+    }
+    div {
+      color: $textColor !important;
+    }
+    table {
+      width: 100% !important;
+      border-collapse: collapse;
+      margin: 10px 0;
+      display: block;
+      overflow-x: auto;
+      background-color: $backgroundColor !important;
+    }
+    td, th {
+      border: 1px solid $tableBorderColor !important;
+      padding: 8px;
+      text-align: left;
+      color: $textColor !important;
+      background-color: transparent !important;
+    }
+    tr:nth-child(even) {
+      background-color: $tableEvenRowBg !important;
+    }
+    tr:nth-child(even) td {
+      background-color: $tableEvenRowBg !important;
+    }
+    a {
+      color: $linkColor !important;
+      text-decoration: none;
+    }
+    ul, ol {
+      padding-left: 20px;
+      margin: 5px 0;
+      color: $textColor !important;
+    }
+    li {
+      color: $textColor !important;
+    }
+    .wp-block-buttons a{
+      text-decoration:none !important;
+      color:white !important;
+      padding:15px 25px !important;
+      border-radius:8px !important;
+      border:1px solid rgba(0,240,0,0.4) !important;
+      background:rgba(0,240,0,0.4) !important;
+    }
+    strong, b {
+      color: $headingColor !important;
+    }
+    </style>
+    ''';
+
+    final fimage =
+        '''
+    <img style="width:100%;" src="$image">
+    ''';
+
+    final content =
+        style +
+        fimage +
+        '<div style="padding: 0 20px;">' +
+        '''
+        <div style="display:flex;justify-content:end;margin-top:20px;color:$textColor;">Date: ${date}</div>
+        ''' +
+        widget.content +
+        '</div>';
+
+    return content
+        .replaceAll(r'\n', '')
+        .replaceAll(r'target=\"_blank\"', '')
+        .replaceAll(r'rel=\"noreferrer', '')
+        .replaceAll(r'noopener\', '');
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -231,7 +278,7 @@ class _SinglePostPageState extends State<SinglePostPage> {
                     singlePosts: SinglePost(
                       title: title,
                       img: image,
-                      content: content,
+                      content: widget.content,
                       category: category,
                       date: date,
                     ),

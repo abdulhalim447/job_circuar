@@ -18,58 +18,78 @@ class _HomePageState extends State<HomePage> {
       builder: (context, categoriesProvider, child) {
         final categories = categoriesProvider.categories;
 
-        return Container(
-          color: Colors.white,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Image.asset('img/banner.jpg'),
-                Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: categories.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-                    itemBuilder: (_, i) {
-                      final category = categories[i];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AllPosts(categoryId: category['id'], categoryName: category['name']),
-                            ),
-                          );
-                        },
-                        child: Card(
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            child: Image.asset(
-                              'img/${category['id']}.jpg',
-                              errorBuilder: (context, error, stackTrace) {
-                                return Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(category['icon'] ?? Icons.work, size: 50, color: Colors.blue),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      category['name'],
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                );
-                              },
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              Image.asset('img/banner.jpg'),
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: categories.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                  ),
+                  itemBuilder: (_, i) {
+                    final category = categories[i];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AllPosts(
+                              categoryId: category['id'],
+                              categoryName: category['name'],
                             ),
                           ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[700]!
+                                : Colors.grey[300]!,
+                            width: 1,
+                          ),
                         ),
-                      );
-                    },
-                  ),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child: Image.asset(
+                            'img/${category['id']}.jpg',
+                            errorBuilder: (context, error, stackTrace) {
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    category['icon'] ?? Icons.work,
+                                    size: 50,
+                                    color: Colors.blue,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    category['name'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

@@ -9,7 +9,11 @@ import '../utis/methods.dart';
 class AllPosts extends StatefulWidget {
   final int categoryId;
   final String categoryName;
-  const AllPosts({super.key, required this.categoryId, required this.categoryName});
+  const AllPosts({
+    super.key,
+    required this.categoryId,
+    required this.categoryName,
+  });
 
   @override
   State<AllPosts> createState() => _AllPostsState();
@@ -23,13 +27,20 @@ class _AllPostsState extends State<AllPosts> {
     super.initState();
     // Fetch posts when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<PostsProvider>(context, listen: false).fetchPostsByCategory(widget.categoryId);
+      Provider.of<PostsProvider>(
+        context,
+        listen: false,
+      ).fetchPostsByCategory(widget.categoryId);
     });
 
     _scrollController.addListener(() {
       // Load more posts when scrolled 50% down
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.1) {
-        Provider.of<PostsProvider>(context, listen: false).fetchMorePosts(widget.categoryId);
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent * 0.1) {
+        Provider.of<PostsProvider>(
+          context,
+          listen: false,
+        ).fetchMorePosts(widget.categoryId);
       }
     });
   }
@@ -64,7 +75,10 @@ class _AllPostsState extends State<AllPosts> {
               ? Center(child: CircularProgressIndicator())
               : posts.isEmpty
               ? Center(
-                  child: Text('No Posts To Display', style: TextStyle(fontSize: 20, color: Colors.red)),
+                  child: Text(
+                    'No Posts To Display',
+                    style: TextStyle(fontSize: 20, color: Colors.red),
+                  ),
                 )
               : RefreshIndicator(
                   onRefresh: () async {
@@ -76,7 +90,10 @@ class _AllPostsState extends State<AllPosts> {
                       controller: _scrollController,
                       slivers: [
                         SliverGrid(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                              ),
                           delegate: SliverChildBuilderDelegate((_, i) {
                             var post = posts[i];
                             return GestureDetector(
@@ -85,19 +102,33 @@ class _AllPostsState extends State<AllPosts> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => SinglePostPage(
-                                      title: post['title']['rendered'] ?? 'No Title',
+                                      title:
+                                          post['title']['rendered'] ??
+                                          'No Title',
                                       date: getDate(post['date'] ?? ''),
                                       image:
                                           post['featured_image_url'] ??
                                           'https://jobsnoticebd.com/wp-content/uploads/2024/09/Screenshot_20240905-111559_Facebook-1-300x200.jpg',
-                                      content: post['content']['rendered'] ?? '',
+                                      content:
+                                          post['content']['rendered'] ?? '',
                                       category: widget.categoryId,
                                     ),
                                   ),
                                 );
                               },
                               child: Card(
-                                color: Color(0xfffefefe),
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color:
+                                        Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.grey[700]!
+                                        : Colors.grey[300]!,
+                                    width: 1,
+                                  ),
+                                ),
                                 child: Center(
                                   child: Column(
                                     children: [
@@ -113,29 +144,45 @@ class _AllPostsState extends State<AllPosts> {
                                           placeholder: (context, url) => Center(
                                             child: Padding(
                                               padding: EdgeInsets.all(20.0),
-                                              child: CircularProgressIndicator(),
+                                              child:
+                                                  CircularProgressIndicator(),
                                             ),
                                           ),
-                                          errorWidget: (context, url, error) => Container(
-                                            color: Colors.grey[300],
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Icon(Icons.image_not_supported, size: 50, color: Colors.grey[600]),
-                                                SizedBox(height: 5),
-                                                Text(
-                                                  'Image not available',
-                                                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                                color: Colors.grey[300],
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.image_not_supported,
+                                                      size: 50,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                    SizedBox(height: 5),
+                                                    Text(
+                                                      'Image not available',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          ),
+                                              ),
                                         ),
                                       ),
                                       SizedBox(height: 5),
-                                      Expanded(child: Text(post['title']['rendered'], textAlign: TextAlign.center)),
+                                      Expanded(
+                                        child: Text(
+                                          post['title']['rendered'],
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
                                         children: [
                                           Text(
                                             'Publish Date: ${getDate(post['date'])}',
