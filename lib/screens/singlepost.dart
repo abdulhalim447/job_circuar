@@ -25,7 +25,12 @@ class SinglePostPage extends StatefulWidget {
 }
 
 class _SinglePostPageState extends State<SinglePostPage> {
-  String title = '', image = '', content = '', style = '', fimage = '', date = '';
+  String title = '',
+      image = '',
+      content = '',
+      style = '',
+      fimage = '',
+      date = '';
   late int category;
   late WebViewController controller;
   bool isfav = false;
@@ -42,34 +47,62 @@ class _SinglePostPageState extends State<SinglePostPage> {
     <style>
     img {
       max-width: 100% !important;
+      width: 100% !important;
       height: auto !important;
       display: block;
-      margin: 10px auto;
+      margin: 0 !important;
+      padding: 0 !important;
+      object-fit: contain;
+    }
+    figure, .wp-block-image, .wp-block-media-text {
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    figure img, .wp-block-image img {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    p img, div img, span img {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
     body {
       font-size: 16px !important;
       line-height: 1.6;
       font-family: 'Roboto', sans-serif;
-      margin: 0;
-      padding: 10px;
+      margin: 0 !important;
+      padding: 0 !important;
       color: #333;
       word-wrap: break-word;
+      overflow-x: hidden;
     }
     h1, h2, h3, h4, h5, h6 {
       font-size: 1.3em !important;
       font-weight: bold;
-      margin-top: 20px;
-      margin-bottom: 10px;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      padding: 0 10px;
       color: #000;
     }
     p {
       font-size: 16px !important;
-      margin-bottom: 15px;
+      margin: 5px 0;
+      padding: 0 10px;
+      max-width: 100%;
+      overflow-x: auto;
     }
     table {
       width: 100% !important;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      margin: 10px 0;
       display: block;
       overflow-x: auto;
     }
@@ -87,6 +120,7 @@ class _SinglePostPageState extends State<SinglePostPage> {
     }
     ul, ol {
       padding-left: 20px;
+      margin: 5px 0;
     }
     .wp-block-buttons a{
     text-decoration:none !important;
@@ -194,7 +228,13 @@ class _SinglePostPageState extends State<SinglePostPage> {
               } else {
                 favourites.add(
                   FavouritePost(
-                    singlePosts: SinglePost(title: title, img: image, content: content, category: category, date: date),
+                    singlePosts: SinglePost(
+                      title: title,
+                      img: image,
+                      content: content,
+                      category: category,
+                      date: date,
+                    ),
                   ),
                 );
                 setState(() {
@@ -212,7 +252,10 @@ class _SinglePostPageState extends State<SinglePostPage> {
                 );
               }
             },
-            icon: Icon(isfav ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+            icon: Icon(
+              isfav ? Icons.favorite : Icons.favorite_border,
+              color: Colors.red,
+            ),
           ),
         ],
       ),
