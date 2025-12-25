@@ -72,8 +72,19 @@ class _MyAppState extends State<MyApp> {
           title: 'Job Circular Notice BD',
           debugShowCheckedModeBanner: false,
           themeMode: settingsProvider.themeMode,
-          theme: ThemeData.light().copyWith(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-          darkTheme: ThemeData.dark().copyWith(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.light),
+            brightness: Brightness.light,
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.dark),
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: Colors.grey[900],
+            appBarTheme: AppBarTheme(backgroundColor: Colors.grey[900], foregroundColor: Colors.white),
+            listTileTheme: ListTileThemeData(textColor: Colors.white, iconColor: Colors.green),
+          ),
           home: !loading
               ? BottomBar()
               : Scaffold(

@@ -39,7 +39,7 @@ class _SettingsPageState extends State<SettingsPage> {
           title: Text('Terms Of Service'),
           onTap: () async {
             try {
-              await launchUrl(Uri.parse('https://job_circularnoticebd.com/privacy-policy/'));
+              await launchUrl(Uri.parse('https://jobsnoticebd.com/privacy-policy/'));
             } catch (e) {
               await Fluttertoast.showToast(
                 msg: "Sorry! Cannot Launch This Url",
@@ -58,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: Icon(Icons.policy, color: Colors.green),
           onTap: () async {
             try {
-              await launchUrl(Uri.parse('https://job_circularnoticebd.com/privacy-policy/'));
+              await launchUrl(Uri.parse('https://jobsnoticebd.com/privacy-policy/'));
             } catch (e) {
               await Fluttertoast.showToast(
                 msg: "Sorry! Cannot Launch This Url",
@@ -78,7 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: Icon(Icons.web, color: Colors.green),
           onTap: () async {
             try {
-              await launchUrl(Uri.parse('https://job_circularnoticebd.com/'));
+              await launchUrl(Uri.parse('https://jobsnoticebd.com/'));
             } catch (e) {
               await Fluttertoast.showToast(
                 msg: "Sorry! Cannot Launch This Url",
