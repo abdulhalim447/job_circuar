@@ -46,36 +46,51 @@ class _SinglePostPageState extends State<SinglePostPage> {
       ..enableZoom(true)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onUrlChange: (u) async {
-            await controller.goBack();
-            if (u.url != 'about:blank') {
-              showAdaptiveDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  content: Text('Dow you want to visit ${u.url}?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () async {
-                        if (await controller.canGoBack()) {
-                          await controller.goBack();
-                        }
-                        Navigator.pop(context);
-                      },
-                      child: Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        try {
-                          await launchUrl(Uri.parse(u.url!));
-                        } catch (e) {}
-                      },
-                      child: Text('Visit'),
-                    ),
-                  ],
-                ),
-              );
+          onNavigationRequest: (NavigationRequest request) async {
+            // Allow about:blank and data URLs
+            if (request.url.startsWith('about:blank') ||
+                request.url.startsWith('data:')) {
+              return NavigationDecision.navigate;
             }
+
+            // Prevent navigation and show dialog for external links
+            showAdaptiveDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text('বাহ্যিক লিংক'),
+                content: Text('আপনি কি এই লিংকে যেতে চান?\n\n${request.url}'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('বাতিল করুন'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      try {
+                        final uri = Uri.parse(request.url);
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } catch (e) {
+                        if (mounted) {
+                          Fluttertoast.showToast(
+                            msg: "লিংক খুলতে ব্যর্থ",
+                            backgroundColor: Colors.red,
+                          );
+                        }
+                      }
+                    },
+                    child: Text('ভিজিট করুন'),
+                  ),
+                ],
+              ),
+            );
+
+            return NavigationDecision.prevent;
           },
         ),
       );
@@ -212,13 +227,42 @@ class _SinglePostPageState extends State<SinglePostPage> {
     li {
       color: $textColor !important;
     }
-    .wp-block-buttons a{
-      text-decoration:none !important;
-      color:white !important;
-      padding:15px 25px !important;
-      border-radius:8px !important;
-      border:1px solid rgba(0,240,0,0.4) !important;
-      background:rgba(0,240,0,0.4) !important;
+    /* WordPress Button Blocks - Fixed Layout */
+    .wp-block-buttons {
+      display: block !important;
+      width: 100% !important;
+      margin: 15px 0 !important;
+      padding: 0 10px !important;
+      text-align: center !important;
+    }
+    .wp-block-button {
+      display: block !important;
+      width: 100% !important;
+      margin: 10px 0 !important;
+    }
+    .wp-block-button__link,
+    .wp-block-buttons a {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      text-decoration: none !important;
+      color: white !important;
+      padding: 15px 25px !important;
+      border-radius: 8px !important;
+      border: 2px solid #00c853 !important;
+      background: linear-gradient(135deg, #00c853 0%, #64dd17 100%) !important;
+      font-weight: bold !important;
+      font-size: 16px !important;
+      text-align: center !important;
+      box-shadow: 0 2px 8px rgba(0, 200, 83, 0.3) !important;
+      transition: all 0.3s ease !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .wp-block-button__link:active,
+    .wp-block-buttons a:active {
+      transform: scale(0.98) !important;
+      box-shadow: 0 1px 4px rgba(0, 200, 83, 0.2) !important;
     }
     strong, b {
       color: $headingColor !important;
@@ -306,16 +350,7 @@ class _SinglePostPageState extends State<SinglePostPage> {
           ),
         ],
       ),
-      body: WillPopScope(
-        onWillPop: () async {
-          if (await controller.canGoBack()) {
-            await controller.goBack();
-            return false;
-          }
-          return true;
-        },
-        child: WebViewWidget(controller: controller),
-      ),
+      body: WebViewWidget(controller: controller),
     );
   }
 

@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+
+import '../services/api_service.dart';
 
 // Isolate function for parsing posts
 List<dynamic> _parsePosts(String responseBody) {
@@ -27,7 +29,8 @@ List<dynamic> _parsePosts(String responseBody) {
         imageUrl = media['source_url'];
       }
     } // Fallback to jetpack_featured_media_url if available
-    else if (post['jetpack_featured_media_url'] != null && post['jetpack_featured_media_url'].toString().isNotEmpty) {
+    else if (post['jetpack_featured_media_url'] != null &&
+        post['jetpack_featured_media_url'].toString().isNotEmpty) {
       imageUrl = post['jetpack_featured_media_url'];
     }
 
@@ -39,22 +42,30 @@ List<dynamic> _parsePosts(String responseBody) {
 }
 
 class PostsProvider extends ChangeNotifier {
+  final ApiService _apiService = ApiService.instance;
+
   // Posts by category
   LinkedHashMap<int, List<dynamic>> _postsByCategory = LinkedHashMap();
   Map<int, bool> _loadingByCategory = {};
   Map<int, int> _currentPageByCategory = {};
   Map<int, bool> _hasMorePostsByCategory = {};
+  Map<int, bool> _isRefreshingByCategory = {}; // Track background refresh
 
   // Search results
   List<dynamic> _searchResults = [];
   bool _searchLoading = false;
   bool _disposed = false;
+  Timer? _searchDebounce;
 
-  PostsProvider();
+  PostsProvider() {
+    // Initialize API service
+    _apiService.initialize();
+  }
 
   @override
   void dispose() {
     _disposed = true;
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -74,6 +85,10 @@ class PostsProvider extends ChangeNotifier {
     return _loadingByCategory[categoryId] ?? false;
   }
 
+  bool isRefreshingCategory(int categoryId) {
+    return _isRefreshingByCategory[categoryId] ?? false;
+  }
+
   bool hasMorePosts(int categoryId) {
     return _hasMorePostsByCategory[categoryId] ?? true;
   }
@@ -81,56 +96,71 @@ class PostsProvider extends ChangeNotifier {
   List<dynamic> get searchResults => _searchResults;
   bool get searchLoading => _searchLoading;
 
-  // Fetch posts for a category
-  Future<void> fetchPostsByCategory(int categoryId, {bool isFetchingMore = false}) async {
-    print('🔵 fetchPostsByCategory called for categoryId: $categoryId, isFetchingMore: $isFetchingMore');
+  /// Fetch posts for a category with stale-while-revalidate strategy
+  Future<void> fetchPostsByCategory(
+    int categoryId, {
+    bool isFetchingMore = false,
+    bool forceRefresh = false,
+  }) async {
+    debugPrint(
+      '🔵 fetchPostsByCategory: categoryId=$categoryId, isFetchingMore=$isFetchingMore, forceRefresh=$forceRefresh',
+    );
 
-    if (_loadingByCategory[categoryId] == true) {
-      debugPrint('🟡 Already loading category $categoryId, returning.');
+    if (_loadingByCategory[categoryId] == true && !forceRefresh) {
+      debugPrint('🟡 Already loading category $categoryId');
       return;
     }
 
-    if (!isFetchingMore) {
-      debugPrint('Clearing posts for category $categoryId to fetch fresh data');
-      _postsByCategory.remove(categoryId);
+    if (!isFetchingMore && !forceRefresh) {
       _currentPageByCategory[categoryId] = 1;
       _hasMorePostsByCategory[categoryId] = true;
     }
 
     _loadingByCategory[categoryId] = true;
+    if (forceRefresh) {
+      _isRefreshingByCategory[categoryId] = true;
+    }
     notifyListeners();
 
     try {
       if (_disposed) return;
       int page = _currentPageByCategory.putIfAbsent(categoryId, () => 1);
 
-      // Optimized API call with specific fields
-      // If categoryId is 0, fetch all posts (remove categories parameter)
-      final categoryParam = categoryId == 0 ? '' : 'categories=$categoryId&';
-      final url =
-          'https://jobsnoticebd.com/wp-json/wp/v2/posts?${categoryParam}page=$page&per_page=10&_embed&_fields=id,date,title,content,jetpack_featured_media_url,_links,_embedded';
-      debugPrint('🌐 API Call: $url');
+      debugPrint('🌐 API Call: category=$categoryId, page=$page');
 
-      final res = await http.get(Uri.parse(url));
+      // Fetch with caching (stale-while-revalidate)
+      final response = await _apiService.fetchPosts(
+        categoryId: categoryId == 0 ? null : categoryId,
+        page: page,
+        perPage: 10,
+        forceRefresh: forceRefresh,
+      );
 
-      debugPrint('📡 Response Status: ${res.statusCode}');
-      debugPrint('📦 Response Body Length: ${res.body.length}');
+      if (_disposed) return;
 
-      if (res.statusCode != 200) {
-        debugPrint('❌ API Error: Status ${res.statusCode}');
+      debugPrint('📡 Response Status: ${response.statusCode}');
+
+      // Check if data came from cache
+      final cacheResponse = response.extra['cache_response'];
+      if (cacheResponse != null) {
+        debugPrint('⚡ Data from CACHE (${cacheResponse.runtimeType})');
+      }
+
+      if (response.statusCode != 200) {
+        debugPrint('❌ API Error: Status ${response.statusCode}');
         _hasMorePostsByCategory[categoryId] = false;
         return;
       }
 
-      // Use compute to parse JSON in a separate isolate
-      final posts = await compute(_parsePosts, res.body);
+      // Parse JSON in isolate
+      final posts = await compute(_parsePosts, jsonEncode(response.data));
 
       if (_disposed) return;
 
       debugPrint('📊 Posts received: ${posts.length}');
 
       if (posts.isEmpty) {
-        debugPrint('⚠️ No more posts found for page $page');
+        debugPrint('⚠️ No more posts for page $page');
         _hasMorePostsByCategory[categoryId] = false;
         return;
       }
@@ -142,29 +172,36 @@ class PostsProvider extends ChangeNotifier {
       }
 
       _currentPageByCategory[categoryId] = page + 1;
+    } on DioException catch (e) {
+      debugPrint('❌ DioException: ${e.type} - ${e.message}');
+      _hasMorePostsByCategory[categoryId] = false;
     } catch (e) {
-      print('❌ Error fetching posts: $e');
+      debugPrint('❌ Error fetching posts: $e');
       _hasMorePostsByCategory[categoryId] = false;
     } finally {
       _loadingByCategory[categoryId] = false;
+      _isRefreshingByCategory[categoryId] = false;
       notifyListeners();
-      print('🏁 Finished loading category $categoryId. Loading: false');
+      debugPrint('🏁 Finished loading category $categoryId');
 
-      // Automatically fetch the next batch if this was the initial load
-      if (!isFetchingMore && _hasMorePostsByCategory[categoryId] == true) {
-        debugPrint('🚀 Auto-fetching next batch for category $categoryId');
+      // Auto-fetch next batch on initial load
+      if (!isFetchingMore &&
+          !forceRefresh &&
+          _hasMorePostsByCategory[categoryId] == true) {
+        debugPrint('🚀 Auto-fetching next batch');
         fetchMorePosts(categoryId);
       }
     }
   }
 
   Future<void> fetchMorePosts(int categoryId) async {
-    if (_loadingByCategory[categoryId] == true || _hasMorePostsByCategory[categoryId] == false) return;
-
+    if (_loadingByCategory[categoryId] == true ||
+        _hasMorePostsByCategory[categoryId] == false)
+      return;
     await fetchPostsByCategory(categoryId, isFetchingMore: true);
   }
 
-  // Search posts
+  /// Search posts with debouncing
   Future<void> searchPosts(String query) async {
     if (query.trim().isEmpty) {
       _searchResults = [];
@@ -172,49 +209,68 @@ class PostsProvider extends ChangeNotifier {
       return;
     }
 
+    // Cancel previous debounce timer
+    _searchDebounce?.cancel();
+
+    // Debounce search by 300ms
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () async {
+      await _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
     _searchLoading = true;
     _searchResults = [];
     notifyListeners();
 
     try {
-      for (int i = 1; i <= 10; i++) {
-        final res = await http.get(Uri.parse('https://jobsnoticebd.com/wp-json/wp/v2/search?search=$query&page=$i'));
+      // Search with caching
+      final searchResponse = await _apiService.searchPosts(query, page: 1);
 
-        if (res.statusCode != 200) break;
+      if (searchResponse.statusCode != 200) {
+        debugPrint('❌ Search API Error: ${searchResponse.statusCode}');
+        return;
+      }
 
-        final searchData = jsonDecode(res.body);
+      final searchData = searchResponse.data as List<dynamic>;
 
-        if (searchData is! List<dynamic> || searchData.isEmpty) break;
+      if (searchData.isEmpty) {
+        debugPrint('⚠️ No search results');
+        return;
+      }
 
-        for (var item in searchData) {
-          try {
-            final postRes = await http.get(
-              Uri.parse('https://jobsnoticebd.com/wp-json/wp/v2/posts/${item['id']}?_embed'),
-            );
+      // Fetch full post details for each result
+      for (var item in searchData.take(20)) {
+        // Limit to 20 results
+        try {
+          final postResponse = await _apiService.getPost(item['id']);
 
-            if (postRes.statusCode == 200) {
-              final post = jsonDecode(postRes.body);
+          if (postResponse.statusCode == 200) {
+            final post = postResponse.data;
 
-              // Extract image URL
-              String imageUrl = '';
-              if (post['_embedded'] != null &&
-                  post['_embedded']['wp:featuredmedia'] != null &&
-                  post['_embedded']['wp:featuredmedia'].isNotEmpty) {
-                var media = post['_embedded']['wp:featuredmedia'][0];
-                if (media['source_url'] != null) {
-                  imageUrl = media['source_url'];
-                }
-              } else if (post['jetpack_featured_media_url'] != null) {
-                imageUrl = post['jetpack_featured_media_url'];
+            // Extract image URL
+            String imageUrl = '';
+            if (post['_embedded'] != null &&
+                post['_embedded']['wp:featuredmedia'] != null &&
+                post['_embedded']['wp:featuredmedia'].isNotEmpty) {
+              var media = post['_embedded']['wp:featuredmedia'][0];
+              if (media['source_url'] != null) {
+                imageUrl = media['source_url'];
               }
-
-              _searchResults.add({'id': post['id'], 'title': post['title']['rendered'], 'image': imageUrl});
-
-              notifyListeners();
+            } else if (post['jetpack_featured_media_url'] != null) {
+              imageUrl = post['jetpack_featured_media_url'];
             }
-          } catch (e) {
-            debugPrint('Error fetching search result: $e');
+
+            _searchResults.add({
+              'id': post['id'],
+              'title': post['title']['rendered'],
+              'image': imageUrl,
+            });
+
+            notifyListeners();
           }
+        } catch (e) {
+          debugPrint('Error fetching search result: $e');
         }
       }
     } catch (e) {
@@ -228,11 +284,20 @@ class PostsProvider extends ChangeNotifier {
   // Clear search results
   void clearSearch() {
     _searchResults = [];
+    _searchDebounce?.cancel();
     notifyListeners();
   }
 
-  // Refresh posts for a category
+  // Refresh posts for a category (force refresh from server)
   Future<void> refreshCategory(int categoryId) async {
-    await fetchPostsByCategory(categoryId);
+    await fetchPostsByCategory(categoryId, forceRefresh: true);
+  }
+
+  // Clear all cache
+  Future<void> clearAllCache() async {
+    await _apiService.clearCache();
+    _postsByCategory.clear();
+    _searchResults.clear();
+    notifyListeners();
   }
 }
