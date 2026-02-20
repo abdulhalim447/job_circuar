@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:job_circular/screens/appsettings.dart';
 import 'package:job_circular/screens/favpage.dart';
+import 'package:job_circular/screens/disclaimer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -22,7 +23,10 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: Icon(Icons.favorite_border, color: Colors.green),
           title: Text('Favourites'),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => FavPage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => FavPage()),
+            );
           },
         ),
         Divider(),
@@ -30,7 +34,10 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: Icon(Icons.settings, color: Colors.green),
           title: Text('App Settings'),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AppSettingsPage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AppSettingsPage()),
+            );
           },
         ),
         Divider(),
@@ -39,7 +46,9 @@ class _SettingsPageState extends State<SettingsPage> {
           title: Text('Terms Of Service'),
           onTap: () async {
             try {
-              await launchUrl(Uri.parse('https://jobsnoticebd.com/privacy-policy/'));
+              await launchUrl(
+                Uri.parse('https://jobsnoticebd.com/privacy-policy-app/'),
+              );
             } catch (e) {
               await Fluttertoast.showToast(
                 msg: "Sorry! Cannot Launch This Url",
@@ -58,7 +67,9 @@ class _SettingsPageState extends State<SettingsPage> {
           leading: Icon(Icons.policy, color: Colors.green),
           onTap: () async {
             try {
-              await launchUrl(Uri.parse('https://jobsnoticebd.com/privacy-policy/'));
+              await launchUrl(
+                Uri.parse('https://jobsnoticebd.com/privacy-policy-app/'),
+              );
             } catch (e) {
               await Fluttertoast.showToast(
                 msg: "Sorry! Cannot Launch This Url",
@@ -92,6 +103,16 @@ class _SettingsPageState extends State<SettingsPage> {
             }
           },
           title: Text('Visit Website'),
+        ),
+        ListTile(
+          leading: Icon(Icons.warning, color: Colors.green),
+          onTap: () async {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => DisclaimerPage()),
+            );
+          },
+          title: Text('Disclaimer'),
         ),
       ],
     );
