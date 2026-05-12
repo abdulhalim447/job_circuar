@@ -11,9 +11,12 @@ import 'models/appsettings.dart';
 import 'models/postcategory.dart';
 import 'models/singlepost.dart';
 import 'providers/categories_provider.dart';
+import 'providers/connectivity_provider.dart';
 import 'providers/favourites_provider.dart';
 import 'providers/posts_provider.dart';
 import 'providers/settings_provider.dart';
+import 'screens/no_internet_screen.dart';
+import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +37,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CategoriesProvider()),
         ChangeNotifierProvider(create: (_) => FavouritesProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
       ],
       child: const MyApp(),
     ),
@@ -53,6 +57,16 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+
+    // Initialize ApiService callback to notify ConnectivityProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ApiService.instance.onConnectionError = () {
+        if (mounted) {
+          context.read<ConnectivityProvider>().setOnlineStatus(false);
+        }
+      };
+    });
+
     nextScreen();
   }
 
@@ -69,27 +83,51 @@ class _MyAppState extends State<MyApp> {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
         return MaterialApp(
-          title: 'Job Circular Notice BD',
+          title: 'Job Notice BD',
           debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            return Consumer<ConnectivityProvider>(
+              builder: (context, connectivity, _) {
+                if (!connectivity.isOnline) {
+                  return const NoInternetScreen();
+                }
+                return child!;
+              },
+            );
+          },
           themeMode: settingsProvider.themeMode,
           theme: ThemeData(
             useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.light),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepPurple,
+              brightness: Brightness.light,
+            ),
             brightness: Brightness.light,
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple, brightness: Brightness.dark),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepPurple,
+              brightness: Brightness.dark,
+            ),
             brightness: Brightness.dark,
             scaffoldBackgroundColor: Colors.grey[900],
-            appBarTheme: AppBarTheme(backgroundColor: Colors.grey[900], foregroundColor: Colors.white),
-            listTileTheme: ListTileThemeData(textColor: Colors.white, iconColor: Colors.green),
+            appBarTheme: AppBarTheme(
+              backgroundColor: Colors.grey[900],
+              foregroundColor: Colors.white,
+            ),
+            listTileTheme: ListTileThemeData(
+              textColor: Colors.white,
+              iconColor: Colors.green,
+            ),
           ),
           home: !loading
               ? BottomBar()
               : Scaffold(
                   body: SafeArea(
-                    child: Center(child: Image.asset('img/splash.jpg', fit: BoxFit.cover)),
+                    child: Center(
+                      child: Image.asset('img/splash.jpg', fit: BoxFit.cover),
+                    ),
                   ),
                 ),
         );

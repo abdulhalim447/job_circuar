@@ -174,7 +174,16 @@ class PostsProvider extends ChangeNotifier {
       _currentPageByCategory[categoryId] = page + 1;
     } on DioException catch (e) {
       debugPrint('❌ DioException: ${e.type} - ${e.message}');
-      _hasMorePostsByCategory[categoryId] = false;
+      if (e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        // Server was slow — internet is still working.
+        // Do NOT permanently block more loading. Keep hasMorePosts true so user can retry.
+        debugPrint('⏱️ Timeout: server slow. Keeping hasMorePosts=true for retry.');
+        // (hasMorePosts remains unchanged — don't set to false)
+      } else {
+        // Real connection error or other failure
+        _hasMorePostsByCategory[categoryId] = false;
+      }
     } catch (e) {
       debugPrint('❌ Error fetching posts: $e');
       _hasMorePostsByCategory[categoryId] = false;

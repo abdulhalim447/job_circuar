@@ -34,9 +34,9 @@ class _AllPostsState extends State<AllPosts> {
     });
 
     _scrollController.addListener(() {
-      // Load more posts when scrolled 50% down
+      // Trigger fetch when user is 500 pixels from the bottom
       if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent * 0.1) {
+          _scrollController.position.maxScrollExtent - 500) {
         Provider.of<PostsProvider>(
           context,
           listen: false,
@@ -134,7 +134,7 @@ class _AllPostsState extends State<AllPosts> {
                                     children: [
                                       Flexible(
                                         child: CachedNetworkImage(
-                                          width: double.infinity,
+                                          height: 200,
                                           fit: BoxFit.fill,
                                           fadeInDuration: Duration.zero,
                                           fadeOutDuration: Duration.zero,
@@ -173,20 +173,33 @@ class _AllPostsState extends State<AllPosts> {
                                               ),
                                         ),
                                       ),
-                                      SizedBox(height: 5),
-                                      Expanded(
+
+                                      Padding(
+                                        padding: const EdgeInsets.all(5.0),
                                         child: Text(
                                           post['title']['rendered'],
-                                          textAlign: TextAlign.center,
+                                          textAlign: TextAlign.left,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Color(0xff046d22),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                       Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         mainAxisAlignment:
-                                            MainAxisAlignment.end,
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             'Publish Date: ${getDate(post['date'])}',
-                                            style: TextStyle(fontSize: 12),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -197,7 +210,7 @@ class _AllPostsState extends State<AllPosts> {
                             );
                           }, childCount: posts.length),
                         ),
-                        if (postsProvider.hasMorePosts(widget.categoryId))
+                        if (loading && posts.isNotEmpty)
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.all(20.0),

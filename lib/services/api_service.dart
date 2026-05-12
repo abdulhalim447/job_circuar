@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio_cache_interceptor_hive_store/dio_cache_interceptor_hive_store.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -9,6 +10,9 @@ class ApiService {
   late Dio _dio;
   late CacheOptions _cacheOptions;
   bool _initialized = false;
+
+  /// Callback to notify when a connection error occurs
+  void Function()? onConnectionError;
 
   ApiService._();
 
@@ -55,9 +59,9 @@ class ApiService {
       _dio = Dio(
         BaseOptions(
           baseUrl: 'https://jobsnoticebd.com/wp-json/wp/v2/',
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
-          sendTimeout: const Duration(seconds: 10),
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 15),
 
           // Enable compression
           headers: {'Accept-Encoding': 'gzip, deflate'},
@@ -73,6 +77,29 @@ class ApiService {
           requestBody: false,
           responseBody: false,
           logPrint: (log) => print('🌐 API: $log'),
+        ),
+      );
+
+      // Add Error Interceptor for connectivity issues
+      // NOTE: Only connectionTimeout and connectionError truly mean "no internet".
+      // receiveTimeout means the server responded slowly — internet is still working.
+      // sendTimeout can happen on very slow connections but not necessarily "offline".
+      _dio.interceptors.add(
+        InterceptorsWrapper(
+          onError: (DioException e, handler) {
+            if (e.type == DioExceptionType.connectionTimeout ||
+                e.type == DioExceptionType.connectionError) {
+              debugPrint('📡 ApiService: No internet / connection error detected');
+              onConnectionError?.call();
+            } else if (e.type == DioExceptionType.receiveTimeout) {
+              debugPrint('📡 ApiService: Server receiveTimeout (server slow, internet is OK)');
+              // Do NOT trigger onConnectionError — internet is fine, server is just slow.
+            } else if (e.type == DioExceptionType.sendTimeout) {
+              debugPrint('📡 ApiService: sendTimeout (may be slow connection, but NOT offline)');
+              // Do NOT trigger onConnectionError — could be a temporary hiccup.
+            }
+            return handler.next(e);
+          },
         ),
       );
 

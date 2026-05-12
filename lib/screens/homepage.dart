@@ -46,42 +46,51 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                       child: Card(
-                        elevation: 3,
+                        elevation: 1,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[850]
+                            : Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                           side: BorderSide(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
                                 ? Colors.grey[700]!
-                                : Colors.grey[300]!,
+                                : Colors.grey[200]!,
                             width: 1,
                           ),
                         ),
                         child: Container(
-                          padding: EdgeInsets.all(8),
-                          child: Image.asset(
-                            'img/${category['id']}.jpg',
-                            errorBuilder: (context, error, stackTrace) {
-                              return Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    category['icon'] ?? Icons.work,
-                                    size: 50,
-                                    color: Colors.blue,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    category['name'],
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
+                          padding: EdgeInsets.all(12),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Image.asset(
+                                  category['iconPath'],
+                                  height: 100,
+                                  width: 100,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.work,
+                                      size: 50,
+                                      color: Colors.blue,
+                                    );
+                                  },
+                                ),
+                              ),
+
+                              Text(
+                                category['name'],
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
