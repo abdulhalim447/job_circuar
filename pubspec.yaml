@@ -36,6 +36,7 @@ dependencies:
   html: ^0.15.6
   provider: ^6.1.5+1
   connectivity_plus: ^6.0.3
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:

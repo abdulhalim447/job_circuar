@@ -4,6 +4,7 @@ import 'package:job_circular/screens/favouritepostpage.dart';
 import 'package:job_circular/screens/searchpage.dart';
 import 'package:job_circular/screens/homepage.dart';
 import 'package:job_circular/screens/settingspage.dart';
+import 'package:job_circular/screens/all_jobs_page.dart';
 
 class BottomBar extends StatefulWidget {
   const BottomBar({super.key});
@@ -41,7 +42,10 @@ class _BottomBarState extends State<BottomBar> {
                 Container(
                   width: double.infinity,
                   color: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
                   child: Row(
                     children: [
                       Image.asset(
@@ -77,10 +81,7 @@ class _BottomBarState extends State<BottomBar> {
                       const Text(
                         'সম্মানিত চাকরি প্রত্যাশী, আপনি কি অ্যাপ থেকে বের হতে চাচ্ছেন?',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
                       ),
                       const SizedBox(height: 20),
                       Row(
@@ -162,6 +163,7 @@ class _BottomBarState extends State<BottomBar> {
               });
             },
             children: const [
+              AllJobsPage(),
               HomePage(),
               SearchPage(),
               FavouritePostPage(),
@@ -170,6 +172,7 @@ class _BottomBarState extends State<BottomBar> {
           ),
         ),
         bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
           currentIndex: index,
           selectedItemColor: const Color(0xFFE6051F),
           unselectedItemColor: Colors.green,
@@ -185,15 +188,16 @@ class _BottomBarState extends State<BottomBar> {
           },
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.grid_view),
+              label: 'Category',
+            ),
             BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
             BottomNavigationBarItem(
               icon: Icon(Icons.favorite),
-              label: 'Favourites',
+              label: 'Favorite',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'My App',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'About'),
           ],
         ),
       ),
