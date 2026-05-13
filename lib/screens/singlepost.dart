@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:job_circular/models/favouritepost.dart';
 import 'package:job_circular/utis/models.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../models/singlepost.dart';
+import 'in_app_webview_screen.dart';
 
 class SinglePostPage extends StatefulWidget {
   final String title, image, content, date;
@@ -53,40 +53,11 @@ class _SinglePostPageState extends State<SinglePostPage> {
               return NavigationDecision.navigate;
             }
 
-            // Prevent navigation and show dialog for external links
-            showAdaptiveDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: Text('বাহ্যিক লিংক'),
-                content: Text('আপনি কি এই লিংকে যেতে চান?\n\n${request.url}'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('বাতিল করুন'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      try {
-                        final uri = Uri.parse(request.url);
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      } catch (e) {
-                        if (mounted) {
-                          Fluttertoast.showToast(
-                            msg: "লিংক খুলতে ব্যর্থ",
-                            backgroundColor: Colors.red,
-                          );
-                        }
-                      }
-                    },
-                    child: Text('ভিজিট করুন'),
-                  ),
-                ],
+            // Direct redirection to InAppWebViewScreen for external links
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => InAppWebViewScreen(url: request.url),
               ),
             );
 
@@ -275,6 +246,8 @@ class _SinglePostPageState extends State<SinglePostPage> {
     <img style="width:100%;" src="$image">
     ''';
 
+    String cleanContent = widget.content;
+
     final content =
         style +
         fimage +
@@ -282,7 +255,7 @@ class _SinglePostPageState extends State<SinglePostPage> {
         '''
         <div style="display:flex;justify-content:end;margin-top:20px;color:$textColor;">Date: ${date}</div>
         ''' +
-        widget.content +
+        cleanContent +
         '</div>';
 
     return content
