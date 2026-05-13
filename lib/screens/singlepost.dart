@@ -92,96 +92,131 @@ class _SinglePostPageState extends State<SinglePostPage> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     // Dynamic colors based on theme
-    final backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff';
+    final backgroundColor = isDarkMode ? '#1a1a1a' : '#f7f8f9';
+    final articleBgColor = isDarkMode ? '#242424' : '#ffffff';
+    final borderColor = isDarkMode ? '#333333' : '#e0e0e0';
     final textColor = isDarkMode ? '#e0e0e0' : '#333333';
     final headingColor = isDarkMode ? '#ffffff' : '#000000';
     final tableBorderColor = isDarkMode ? '#444444' : '#dddddd';
     final tableEvenRowBg = isDarkMode ? '#2a2a2a' : '#f2f2f2';
-    final linkColor = isDarkMode ? '#64b5f6' : '#007bff';
+    final linkColor = isDarkMode ? '#1b78e2' : '#1b78e2';
+    final metaColor = isDarkMode ? '#aaaaaa' : '#757575';
 
     final style =
         '''
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
     * {
       box-sizing: border-box;
     }
-    img {
-      max-width: 100% !important;
-      width: 100% !important;
-      height: auto !important;
-      display: block;
-      margin: 0 !important;
-      padding: 0 !important;
-      object-fit: contain;
-    }
-    figure, .wp-block-image, .wp-block-media-text {
-      max-width: 100% !important;
-      width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    figure img, .wp-block-image img {
-      max-width: 100% !important;
-      width: 100% !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    p img, div img, span img {
-      max-width: 100% !important;
-      width: 100% !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
     body {
-      font-size: 16px !important;
+      font-size: 17px !important;
       line-height: 1.6;
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Noto Sans Bengali', 'SolaimanLipi', Arial, sans-serif !important;
       margin: 0 !important;
-      padding: 0 !important;
+      padding: 10px 10px !important;
       background-color: $backgroundColor !important;
       color: $textColor !important;
       word-wrap: break-word;
       overflow-x: hidden;
     }
-    h1, h2, h3, h4, h5, h6 {
-      font-size: 1.3em !important;
-      font-weight: bold;
-      margin-top: 10px;
-      margin-bottom: 5px;
-      padding: 0 10px;
+    .inside-article {
+      background-color: $articleBgColor;
+      border: 1px solid $borderColor;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+      margin-bottom: 20px;
+    }
+    h1.entry-title {
+      font-size: 24px !important;
+      font-weight: 700;
+      margin-top: 0;
+      margin-bottom: 15px;
       color: $headingColor !important;
+      line-height: 1.4;
     }
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      color: $metaColor;
+      font-size: 15px;
+      flex-wrap: wrap;
+    }
+    .byline {
+      font-weight: 700;
+      color: $headingColor;
+      display: flex;
+      align-items: center;
+    }
+    .byline::after {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-left: 5px;
+      vertical-align: middle;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231DA1F2' d='M23 12l-2.44-2.78.34-3.68-3.61-.82L15.4 1.54 12 3 8.6 1.54 6.71 4.72 3.1 5.53l.34 3.68L1 12l2.44 2.78-.34 3.69 3.61.82L8.6 22.47 12 21l3.4 1.46 1.89-3.18 3.61-.82-.34-3.68L23 12zM10 17l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    .posted-on {
+      margin-left: 10px;
+    }
+    .posted-on::before {
+      content: "•";
+      margin-right: 10px;
+    }
+    .wp-block-image img {
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 10px;
+      box-shadow: rgba(0, 0, 0, 0.20) 0px 5px 10px;
+      margin: 20px 0;
+    }
+    .featured-image {
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 10px;
+      box-shadow: rgba(0, 0, 0, 0.20) 0px 5px 10px;
+      margin-bottom: 20px;
+      display: block;
+    }
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    figure {
+      margin: 15px 0 !important;
+      max-width: 100% !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 700;
+      margin-top: 25px;
+      margin-bottom: 15px;
+      color: $headingColor !important;
+      line-height: 1.4;
+    }
+    h2 { font-size: 22px !important; }
+    h3 { font-size: 20px !important; }
     p {
-      font-size: 16px !important;
-      margin: 5px 0;
-      padding: 0 10px;
-      max-width: 100%;
-      overflow-x: auto;
-      color: $textColor !important;
-    }
-    div {
+      font-size: 17px !important;
+      margin: 15px 0;
       color: $textColor !important;
     }
     table {
       width: 100% !important;
       border-collapse: collapse;
-      margin: 10px 0;
+      margin: 15px 0;
       display: block;
       overflow-x: auto;
-      background-color: $backgroundColor !important;
     }
     td, th {
       border: 1px solid $tableBorderColor !important;
-      padding: 8px;
+      padding: 10px;
       text-align: left;
-      color: $textColor !important;
-      background-color: transparent !important;
-    }
-    tr:nth-child(even) {
-      background-color: $tableEvenRowBg !important;
     }
     tr:nth-child(even) td {
       background-color: $tableEvenRowBg !important;
@@ -192,71 +227,72 @@ class _SinglePostPageState extends State<SinglePostPage> {
     }
     ul, ol {
       padding-left: 20px;
-      margin: 5px 0;
-      color: $textColor !important;
+      margin: 15px 0;
     }
     li {
-      color: $textColor !important;
+      margin-bottom: 8px;
     }
-    /* WordPress Button Blocks - Fixed Layout */
+    /* Button blocks */
     .wp-block-buttons {
-      display: block !important;
-      width: 100% !important;
-      margin: 15px 0 !important;
-      padding: 0 10px !important;
-      text-align: center !important;
+      display: flex !important;
+      flex-direction: column;
+      gap: 10px;
+      margin: 20px 0 !important;
     }
     .wp-block-button {
-      display: block !important;
       width: 100% !important;
-      margin: 10px 0 !important;
     }
-    .wp-block-button__link,
-    .wp-block-buttons a {
+    .wp-block-button__link, a.button {
       display: block !important;
       width: 100% !important;
-      max-width: 100% !important;
       text-decoration: none !important;
-      color: white !important;
-      padding: 15px 25px !important;
+      color: #ffffff !important;
+      padding: 12px 20px !important;
       border-radius: 8px !important;
-      border: 2px solid #00c853 !important;
-      background: linear-gradient(135deg, #00c853 0%, #64dd17 100%) !important;
-      font-weight: bold !important;
+      background: #0A5E0E !important;
+      font-weight: 600 !important;
       font-size: 16px !important;
       text-align: center !important;
-      box-shadow: 0 2px 8px rgba(0, 200, 83, 0.3) !important;
       transition: all 0.3s ease !important;
-      margin: 0 !important;
       box-sizing: border-box !important;
+      border: none !important;
     }
-    .wp-block-button__link:active,
-    .wp-block-buttons a:active {
-      transform: scale(0.98) !important;
-      box-shadow: 0 1px 4px rgba(0, 200, 83, 0.2) !important;
+    .hot-jobs-label, .vacancies-label, .deadline-label {
+      padding: 7px 10px;
+      font-size: 13px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-right: 5px;
+      display: inline-block;
+      margin-bottom: 10px;
+      color: #fff;
     }
-    strong, b {
-      color: $headingColor !important;
+    .hot-jobs-label { background: red; box-shadow: 1px 3px 5px rgba(0, 0, 0, 0.3); }
+    .vacancies-label { background: green; }
+    .deadline-label { background: #fde5e5; color: red; }
+    .gb-container, .gb-grid-wrapper, .gb-grid-column {
+      max-width: 100% !important;
     }
     </style>
-    ''';
-
-    final fimage =
-        '''
-    <img style="width:100%;" src="$image">
     ''';
 
     String cleanContent = widget.content;
 
     final content =
         style +
-        fimage +
-        '<div style="padding: 0 20px;">' +
         '''
-        <div style="display:flex;justify-content:end;margin-top:20px;color:$textColor;">Date: ${date}</div>
-        ''' +
-        cleanContent +
-        '</div>';
+        <div class="inside-article">
+          <h1 class="entry-title">${title}</h1>
+          <div class="entry-meta">
+            <span class="byline">Jobs Notice BD</span>
+            <span class="posted-on">${date}</span>
+          </div>
+          <img class="featured-image" src="$image">
+          <div class="entry-content">
+            $cleanContent
+          </div>
+        </div>
+        ''';
 
     return content
         .replaceAll(r'\n', '')
@@ -268,6 +304,7 @@ class _SinglePostPageState extends State<SinglePostPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         titleSpacing: 0,
         title: Text(title),
