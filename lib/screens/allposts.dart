@@ -112,6 +112,7 @@ class _AllPostsState extends State<AllPosts> {
                                       content:
                                           post['content']['rendered'] ?? '',
                                       category: widget.categoryId,
+                                      acf: post['acf'],
                                     ),
                                   ),
                                 );

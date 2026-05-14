@@ -10,6 +10,7 @@ import 'in_app_webview_screen.dart';
 class SinglePostPage extends StatefulWidget {
   final String title, image, content, date;
   final int category;
+  final dynamic acf;
 
   const SinglePostPage({
     super.key,
@@ -18,6 +19,7 @@ class SinglePostPage extends StatefulWidget {
     required this.content,
     required this.date,
     required this.category,
+    this.acf,
   });
 
   @override
@@ -201,6 +203,58 @@ class _SinglePostPageState extends State<SinglePostPage> {
     }
     h2 { font-size: 22px !important; }
     h3 { font-size: 20px !important; }
+    h4 { font-size: 19px !important; }
+    h5 { font-size: 18px !important; }
+    h6 { font-size: 16px !important; }
+    /* All gb-headline headings are center-aligned on the website */
+    /* Confirmed by SEO analysis: h2(15), h3(5), h5(8), h6(3) all use gb-headline-text */
+    .gb-headline-text {
+      text-align: center !important;
+      display: block !important;
+      width: 100% !important;
+    }
+    h3.wp-block-heading, h5.wp-block-heading {
+      text-align: center !important;
+    }
+    /* Fix figure > a > img so images inside anchor tags show properly */
+    /* SEO data shows 20 images, all lazy-loaded - handled in Dart code */
+    figure a img, figure img {
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 10px;
+      box-shadow: rgba(0,0,0,0.20) 0px 5px 10px;
+      margin: 10px 0;
+      display: block !important;
+    }
+    figure a {
+      display: block !important;
+      width: 100% !important;
+    }
+    /* wp-block-latest-posts: related post grid */
+    .wp-block-latest-posts {
+      padding-left: 0 !important;
+      list-style: none !important;
+    }
+    .wp-block-latest-posts li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid $borderColor;
+    }
+    .wp-block-latest-posts__featured-image img {
+      width: 80px !important;
+      height: 50px !important;
+      object-fit: cover;
+      border-radius: 6px;
+      box-shadow: none !important;
+      margin: 0 !important;
+    }
+    .wp-block-latest-posts__post-title {
+      font-size: 14px;
+      line-height: 1.4;
+      color: $linkColor !important;
+    }
     p {
       font-size: 17px !important;
       margin: 15px 0;
@@ -273,10 +327,185 @@ class _SinglePostPageState extends State<SinglePostPage> {
     .gb-container, .gb-grid-wrapper, .gb-grid-column {
       max-width: 100% !important;
     }
+    .acf-box {
+      border-left: 4px solid red;
+      border-right: 4px solid red;
+      background-color: $articleBgColor;
+      border-radius: 12px;
+      padding: 15px;
+      margin: 20px 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .acf-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    .acf-icon {
+      margin-right: 10px;
+      font-size: 18px;
+      opacity: 0.7;
+    }
+    .acf-label {
+      font-weight: 600;
+      color: $headingColor;
+    }
+    .acf-value-red {
+      color: red;
+      font-weight: bold;
+    }
+    .acf-value-green {
+      color: green;
+      font-weight: bold;
+    }
+    .acf-value-black {
+      color: $textColor;
+    }
+    .kksr-stars, .kksr-stars-inactive, .kksr-stars-active {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center;
+    }
+    .kksr-star {
+      display: inline-block !important;
+    }
+    .kk-star-ratings {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    p:empty {
+      display: none !important;
+    }
     </style>
     ''';
 
     String cleanContent = widget.content;
+
+    String acfHtml = '';
+    if (widget.acf != null && widget.acf is Map) {
+      final runningCircular = widget.acf['running_circular']?.toString() ?? '';
+      final jobPostCategory = widget.acf['job_post_category']?.toString() ?? '';
+      final vacancies = widget.acf['vacancies']?.toString() ?? '';
+      final deadlineRaw = widget.acf['deadline']?.toString() ?? '';
+
+      // Parse each deadline date and compute days remaining
+      String deadlineHtml = '';
+      if (deadlineRaw.isNotEmpty) {
+        // Split by ',' or ',' (Bengali comma) or ' ও '
+        final parts = deadlineRaw.split(RegExp(r'[,،]|\sও\s'));
+        final today = DateTime.now();
+        final Map<String, int> bengaliMonths = {
+          'জানুয়ারি': 1, 'ফেব্রুয়ারি': 2, 'মার্চ': 3, 'এপ্রিল': 4,
+          'মে': 5, 'জুন': 6, 'জুলাই': 7, 'আগস্ট': 8,
+          'সেপ্টেম্বর': 9, 'অক্টোবর': 10, 'নভেম্বর': 11, 'ডিসেম্বর': 12,
+        };
+        // Bengali digits to ASCII
+        String toAscii(String s) {
+          const bengali = '০১২৩৪৫৬৭৮৯';
+          var res = '';
+          for (var c in s.split('')) {
+            final idx = bengali.indexOf(c);
+            res += idx >= 0 ? idx.toString() : c;
+          }
+          return res;
+        }
+
+        // Try to find the last year mentioned in the full deadline string
+        int? globalYear;
+        final yearMatch = RegExp(r'[০-৯]{4}').firstMatch(deadlineRaw);
+        if (yearMatch != null) {
+          globalYear = int.tryParse(toAscii(yearMatch.group(0)!));
+        }
+
+        // Collect parsed dates with day count
+        final List<Map<String, dynamic>> deadlineDates = [];
+        for (final part in parts) {
+          final trimmed = part.trim();
+          if (trimmed.isEmpty) continue;
+          // Match pattern: "DD মাস YYYY" or "DD মাস"
+          final match = RegExp(
+            r'([০-৯]{1,2})\s+([\u0980-\u09FF]+)(?:\s+([০-৯]{4}))?'
+          ).firstMatch(trimmed);
+          if (match != null) {
+            final dayStr = toAscii(match.group(1)!);
+            final monthName = match.group(2)!;
+            final yearStr = match.group(3) != null ? toAscii(match.group(3)!) : null;
+            final day = int.tryParse(dayStr);
+            final month = bengaliMonths[monthName];
+            final year = yearStr != null ? int.tryParse(yearStr) : globalYear;
+            if (day != null && month != null && year != null) {
+              final deadline = DateTime(year, month, day);
+              final diff = deadline.difference(DateTime(today.year, today.month, today.day)).inDays;
+              deadlineDates.add({'label': trimmed, 'diff': diff, 'date': deadline});
+            } else {
+              deadlineDates.add({'label': trimmed, 'diff': null, 'date': null});
+            }
+          } else {
+            deadlineDates.add({'label': trimmed, 'diff': null, 'date': null});
+          }
+        }
+
+        if (deadlineDates.isNotEmpty) {
+          // Find nearest upcoming deadline
+          final upcoming = deadlineDates.where((d) => d['diff'] != null && d['diff'] >= 0).toList()
+            ..sort((a, b) => (a['diff'] as int).compareTo(b['diff'] as int));
+          final nearest = upcoming.isNotEmpty ? upcoming.first : null;
+
+          // Build deadline rows
+          final rows = deadlineDates.map((d) {
+            final diff = d['diff'] as int?;
+            String badge = '';
+            if (diff == null) {
+              badge = '';
+            } else if (diff < 0) {
+              badge = '<span style="color:#888;font-size:13px;"> → শেষ হয়েছে</span>';
+            } else if (diff == 0) {
+              badge = '<span style="color:red;font-weight:bold;font-size:13px;"> → আজই শেষ!</span>';
+            } else {
+              badge = '<span style="color:red;font-size:13px;"> → ${diff} দিন বাকি</span>';
+            }
+            return '<div style="margin:4px 0;">${d['label']}$badge</div>';
+          }).join('');
+
+          String nearestBanner = '';
+          if (nearest != null) {
+            nearestBanner = '<div style="background:#fff3f3;border:1px solid #ffaaaa;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:bold;color:red;font-size:15px;">⏰ পরবর্তী আবেদনের শেষ তারিখ: ${nearest['label']} → ${nearest['diff']} দিন বাকি</div>';
+          }
+
+          deadlineHtml = '$nearestBanner$rows';
+        } else {
+          deadlineHtml = '<div>$deadlineRaw</div>';
+        }
+      }
+
+      if (runningCircular.isNotEmpty || jobPostCategory.isNotEmpty || vacancies.isNotEmpty) {
+        acfHtml = '''
+        <div class="acf-box">
+          <div class="acf-item">
+            <span class="acf-icon">📄</span>
+            <div><span class="acf-label">চলমান নিয়োগ:</span> <span class="acf-value-red">$runningCircular</span></div>
+          </div>
+          <div class="acf-item">
+            <span class="acf-icon">📋</span>
+            <div><span class="acf-label">পদ ক্যাটাগরি:</span> <span class="acf-value-black">$jobPostCategory</span></div>
+          </div>
+          <div class="acf-item">
+            <span class="acf-icon">👤</span>
+            <div><span class="acf-label">মোট পদের সং&zwnj;খ্যা:</span> <span class="acf-value-green">$vacancies</span></div>
+          </div>
+          ${deadlineRaw.isNotEmpty ? '''
+          <div class="acf-item" style="flex-direction:column;align-items:flex-start;">
+            <div style="display:flex;align-items:center;margin-bottom:8px;">
+              <span class="acf-icon" style="margin-right:10px;">📅</span>
+              <span class="acf-label">আবেদনের শেষ তারিখ:</span>
+            </div>
+            <div style="padding-left:28px;color:$textColor;">$deadlineHtml</div>
+          </div>''' : ''}
+        </div>
+        ''';
+      }
+    }
 
     final content =
         style +
@@ -288,17 +517,30 @@ class _SinglePostPageState extends State<SinglePostPage> {
             <span class="posted-on">${date}</span>
           </div>
           <img class="featured-image" src="$image">
+          $acfHtml
           <div class="entry-content">
             $cleanContent
           </div>
         </div>
         ''';
 
+    // Fix lazy-loaded images (SEO data: all 20 images are lazy-loaded)
+    // WebView doesn't always trigger lazy loading, so force eager loading
+    // Also remove srcset which can confuse the WebView renderer
     return content
         .replaceAll(r'\n', '')
         .replaceAll(r'target=\"_blank\"', '')
         .replaceAll(r'rel=\"noreferrer', '')
-        .replaceAll(r'noopener\', '');
+        .replaceAll(r'noopener\', '')
+        .replaceAll('<p>&nbsp;</p>', '')
+        .replaceAll('<p><br></p>', '')
+        .replaceAll('loading="lazy"', 'loading="eager"')
+        .replaceAll('loading=\'lazy\'', 'loading=\'eager\'')
+        .replaceAll(RegExp(r'\ssrcset="[^"]*"'), '')
+        .replaceAll(RegExp(r"\ssrcset='[^']*'"), '')
+        .replaceAll(RegExp(r'\ssizes="[^"]*"'), '')
+        .replaceAll(RegExp(r"\ssizes='[^']*'"), '')
+        .replaceAll(RegExp(r'\sdecoding="[^"]*"'), '');
   }
 
   @override

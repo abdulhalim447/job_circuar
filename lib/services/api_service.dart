@@ -132,7 +132,7 @@ class ApiService {
         'per_page': perPage,
         '_embed': true,
         '_fields':
-            'id,date,title,content,jetpack_featured_media_url,_links,_embedded',
+            'id,date,title,content,acf,jetpack_featured_media_url,_links,_embedded',
       },
       options: forceRefresh
           ? _cacheOptions.copyWith(policy: CachePolicy.refresh).toOptions()

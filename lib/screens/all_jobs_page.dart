@@ -110,6 +110,7 @@ class _AllJobsPageState extends State<AllJobsPage> {
                                       content:
                                           post['content']['rendered'] ?? '',
                                       category: categoryId,
+                                      acf: post['acf'],
                                     ),
                                   ),
                                 );
