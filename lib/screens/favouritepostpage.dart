@@ -47,6 +47,7 @@ class _FavouritePostPageState extends State<FavouritePostPage> {
                                   content: post.content,
                                   category: post.category,
                                   date: post.date,
+                                  acf: post.acf,
                                 ),
                               ),
                             );

@@ -6,6 +6,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../models/singlepost.dart';
 import 'in_app_webview_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/favourites_provider.dart';
 
 class SinglePostPage extends StatefulWidget {
   final String title, image, content, date;
@@ -30,8 +32,6 @@ class _SinglePostPageState extends State<SinglePostPage> {
   String title = '', image = '', date = '';
   late int category;
   late WebViewController controller;
-  bool isfav = false;
-  int index = -1;
   bool _controllerInitialized = false;
 
   @override
@@ -67,15 +67,6 @@ class _SinglePostPageState extends State<SinglePostPage> {
           },
         ),
       );
-
-    for (int i = 0; i < favourites.length; i++) {
-      var post = favourites.getAt(i)!.singlePosts;
-      if (post.title == title) {
-        isfav = true;
-        index = i;
-        break;
-      }
-    }
   }
 
   @override
@@ -390,6 +381,7 @@ class _SinglePostPageState extends State<SinglePostPage> {
     String cleanContent = widget.content;
 
     String acfHtml = '';
+    print("Debug SinglePostPage: widget.acf is ${widget.acf}, type: ${widget.acf.runtimeType}");
     if (widget.acf != null && widget.acf is Map) {
       final runningCircular = widget.acf['running_circular']?.toString() ?? '';
       final jobPostCategory = widget.acf['job_post_category']?.toString() ?? '';
@@ -558,54 +550,51 @@ class _SinglePostPageState extends State<SinglePostPage> {
         titleSpacing: 0,
         title: Text(title),
         actions: [
-          IconButton(
-            tooltip: 'Add To Favourites',
-            onPressed: () async {
-              if (isfav) {
-                setState(() {
-                  favourites.deleteAt(index);
-                  isfav = false;
-                });
-                await Fluttertoast.showToast(
-                  msg: "Deleted From Favourites",
-                  toastLength: Toast.LENGTH_LONG,
-                  gravity: ToastGravity.CENTER,
-                  timeInSecForIosWeb: 1,
-                  backgroundColor: Colors.red,
-                  textColor: Colors.white,
-                  fontSize: 16.0,
-                );
-              } else {
-                favourites.add(
-                  FavouritePost(
-                    singlePosts: SinglePost(
-                      title: title,
-                      img: image,
-                      content: widget.content,
-                      category: category,
-                      date: date,
-                    ),
-                  ),
-                );
-                setState(() {
-                  isfav = true;
-                  index = favourites.length - 1;
-                });
-                await Fluttertoast.showToast(
-                  msg: "Added To Favourites",
-                  toastLength: Toast.LENGTH_LONG,
-                  gravity: ToastGravity.CENTER,
-                  timeInSecForIosWeb: 1,
-                  backgroundColor: Colors.red,
-                  textColor: Colors.white,
-                  fontSize: 16.0,
-                );
-              }
+          Consumer<FavouritesProvider>(
+            builder: (context, favProvider, child) {
+              final isfav = favProvider.isFavourite(title);
+              return IconButton(
+                tooltip: 'Add To Favourites',
+                onPressed: () async {
+                  final post = SinglePost(
+                    title: title,
+                    img: image,
+                    content: widget.content,
+                    category: category,
+                    date: date,
+                    acf: widget.acf is Map ? widget.acf as Map : null,
+                  );
+                  
+                  if (isfav) {
+                    favProvider.removeFavourite(title);
+                    await Fluttertoast.showToast(
+                      msg: "Deleted From Favourites",
+                      toastLength: Toast.LENGTH_LONG,
+                      gravity: ToastGravity.CENTER,
+                      timeInSecForIosWeb: 1,
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                      fontSize: 16.0,
+                    );
+                  } else {
+                    favProvider.addFavourite(post);
+                    await Fluttertoast.showToast(
+                      msg: "Added To Favourites",
+                      toastLength: Toast.LENGTH_LONG,
+                      gravity: ToastGravity.CENTER,
+                      timeInSecForIosWeb: 1,
+                      backgroundColor: Colors.red,
+                      textColor: Colors.white,
+                      fontSize: 16.0,
+                    );
+                  }
+                },
+                icon: Icon(
+                  isfav ? Icons.favorite : Icons.favorite_border,
+                  color: Colors.red,
+                ),
+              );
             },
-            icon: Icon(
-              isfav ? Icons.favorite : Icons.favorite_border,
-              color: Colors.red,
-            ),
           ),
         ],
       ),

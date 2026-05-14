@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:hive/hive.dart';
 
 part 'singlepost.g.dart';
@@ -9,7 +10,9 @@ class SinglePost {
       required this.content,
       required this.img,
       required this.date,
-      required this.category});
+      required this.category,
+      Map<dynamic, dynamic>? acf})
+      : acfJson = acf != null ? jsonEncode(acf) : null;
 
   @HiveField(0)
   String title;
@@ -25,4 +28,12 @@ class SinglePost {
 
   @HiveField(4)
   String date;
+
+  /// Stored as JSON string so Hive serializes it reliably
+  @HiveField(5)
+  String? acfJson;
+
+  /// Decoded acf Map — use this in the UI
+  Map<String, dynamic>? get acf =>
+      acfJson != null ? Map<String, dynamic>.from(jsonDecode(acfJson!)) : null;
 }

@@ -31,6 +31,7 @@ class _FavPageState extends State<FavPage> {
                   itemCount: favourites.length,
                   itemBuilder: (_, i) {
                     var post = favourites[i];
+                    print("Debug FavPage: post.title: ${post.title}, acfJson: ${post.acfJson}, acf: ${post.acf}");
                     return ListTile(
                       onTap: () {
                         Navigator.push(
@@ -42,6 +43,7 @@ class _FavPageState extends State<FavPage> {
                               content: post.content,
                               category: post.category,
                               date: post.date,
+                              acf: post.acf,
                             ),
                           ),
                         );

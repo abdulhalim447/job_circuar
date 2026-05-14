@@ -40,6 +40,7 @@ class _FavListPageState extends State<FavListPage> {
                   content: post.content,
                   category: post.category,
                   date: post.date,
+                  acf: post.acf,
                 ),
               ),
             );
