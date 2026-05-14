@@ -306,10 +306,17 @@ class _SinglePostPageState extends State<SinglePostPage> {
       background: #0A5E0E !important;
       font-weight: 600 !important;
       font-size: 16px !important;
+      font-family: 'Noto Sans Bengali', 'SolaimanLipi', Arial, sans-serif !important;
       text-align: center !important;
       transition: all 0.3s ease !important;
       box-sizing: border-box !important;
       border: none !important;
+    }
+    /* Force inner elements like <mark> to inherit color and font */
+    .wp-block-button__link *, a.button * {
+      color: #ffffff !important;
+      font-family: inherit !important;
+      background-color: transparent !important;
     }
     .hot-jobs-label, .vacancies-label, .deadline-label {
       padding: 7px 10px;
