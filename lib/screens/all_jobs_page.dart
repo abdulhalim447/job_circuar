@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:job_circular/screens/singlepost.dart';
 import 'package:provider/provider.dart';
 
+import 'package:shimmer/shimmer.dart';
+
 import '../providers/posts_provider.dart';
 import '../utis/methods.dart';
 import 'main_drawer.dart';
@@ -70,7 +72,7 @@ class _AllJobsPageState extends State<AllJobsPage> {
           ),
           drawer: const MainDrawer(),
           body: (loading && posts.isEmpty)
-              ? const Center(child: CircularProgressIndicator())
+              ? _buildShimmerGrid(context)
               : posts.isEmpty
               ? const Center(
                   child: Text(
@@ -224,6 +226,80 @@ class _AllJobsPageState extends State<AllJobsPage> {
                 ),
         );
       },
+    );
+  }
+
+  Widget _buildShimmerGrid(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+        ),
+        itemCount: 8,
+        itemBuilder: (context, index) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Card(
+            elevation: 3,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                width: 1,
+              ),
+            ),
+            child: Shimmer.fromColors(
+              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+              highlightColor: isDark ? Colors.grey[600]! : Colors.grey[100]!,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: double.infinity,
+                          height: 12,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
+                    child: Center(
+                      child: Container(
+                        width: 100,
+                        height: 10,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

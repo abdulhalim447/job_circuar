@@ -103,6 +103,13 @@ class _MyAppState extends State<MyApp> {
               brightness: Brightness.light,
             ),
             brightness: Brightness.light,
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
