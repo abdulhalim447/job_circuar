@@ -38,6 +38,7 @@ dependencies:
   connectivity_plus: ^6.0.3
   share_plus: ^13.1.0
   shimmer: ^3.0.0
+  gal: ^2.3.0
 
 dev_dependencies:
   flutter_test:

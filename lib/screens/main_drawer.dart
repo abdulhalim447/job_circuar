@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:job_circular/screens/age_calculator.dart';
 import 'package:job_circular/screens/in_app_webview_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,17 +27,13 @@ class MainDrawer extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.person_2_outlined, color: Colors.green),
+            leading: const Icon(Icons.calculate, color: Colors.green),
             title: const Text('Age Calculator'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const InAppWebViewScreen(
-                    url: 'https://jobsnoticebd.com/age-calculator/',
-                  ),
-                ),
+                MaterialPageRoute(builder: (_) => const AgeCalculatorApp()),
               );
             },
           ),

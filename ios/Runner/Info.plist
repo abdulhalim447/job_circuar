@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>ছবি গ্যালারিতে সেভ করার জন্য অনুমতি প্রয়োজন</string>
 </dict>
 </plist>
